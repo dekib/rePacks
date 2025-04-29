@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Packs Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .pack-sizes {
+            margin-bottom: 20px;
+        }
+        .pack-size-input {
+            display: flex;
+            margin-bottom: 10px;
+        }
+        .pack-size-input input {
+            padding: 8px;
+            margin-right: 10px;
+            width: 100px;
+        }
+        button {
+            padding: 8px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .calculator {
+            display: flex;
+            align-items: center;
+            margin: 20px 0;
+        }
+        .calculator input {
+            padding: 8px;
+            width: 100px;
+            margin-right: 10px;
+        }
+        .results {
+            margin-top: 20px;
+            width: 100%;
+        }
+        .results table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .results th, .results td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .results th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+<h1>Order Packs Calculator</h1>
+
+<div class="pack-sizes">
+    <h2>Pack Sizes</h2>
+    <div id="pack-size-inputs">
+        <div class="pack-size-input">
+            <input type="number" min="1" class="pack-size" placeholder="Pack size">
+        </div>
+    </div>
+    <button id="add-pack-size">+ Add Pack Size</button>
+    <button id="submit-sizes">Submit pack sizes change</button>
+</div>
+
+<div class="calculator">
+    <label for="items">Items:</label>
+    <input type="number" min="1" id="items" placeholder="Number of items">
+    <button id="calculate">Calculate</button>
+</div>
+
+<div class="results" id="results" style="display: none;">
+    <h2>Results</h2>
+    <table>
+        <thead>
+        <tr>
+            <th>Pack</th>
+            <th>Quantity</th>
+        </tr>
+        </thead>
+        <tbody id="results-body">
+        </tbody>
+    </table>
+</div>
+
+<script>
+    // Add new pack size input
+    document.getElementById('add-pack-size').addEventListener('click', function() {
+        const div = document.createElement('div');
+        div.className = 'pack-size-input';
+        div.innerHTML = `
+                <input type="number" min="1" class="pack-size" placeholder="Pack size">
+                <button class="remove-pack">×</button>
+            `;
+        document.getElementById('pack-size-inputs').appendChild(div);
+
+        // Add remove functionality
+        div.querySelector('.remove-pack').addEventListener('click', function() {
+            div.remove();
+        });
+    });
+
+    // Submit pack sizes to API
+    document.getElementById('submit-sizes').addEventListener('click', async function() {
+        const packSizes = Array.from(document.querySelectorAll('.pack-size'))
+            .map(input => parseInt(input.value))
+            .filter(size => !isNaN(size) && size > 0);
+
+        if (packSizes.length === 0) {
+            alert('Please add at least one valid pack size');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/v1/packs/sizes', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ sizes: packSizes })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || 'Failed to update pack sizes');
+            }
+
+            alert('Pack sizes updated successfully!');
+        } catch (error) {
+            alert(error.message);
+        }
+    });
+
+    // Calculate packs
+    document.getElementById('calculate').addEventListener('click', async function() {
+        const items = parseInt(document.getElementById('items').value);
+        if (isNaN(items) || items < 1) {
+            alert('Please enter a valid number of items');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/v1/packs?items_no=${items}`);
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || 'Failed to calculate packs');
+            }
+
+            const data = await response.json();
+            displayResults(data.packs);
+        } catch (error) {
+            alert(error.message);
+        }
+    });
+
+    // Display results
+    function displayResults(packs) {
+        const resultsBody = document.getElementById('results-body');
+        resultsBody.innerHTML = '';
+
+        packs.forEach(pack => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                    <td>${pack.pack}</td>
+                    <td>${pack.quantity}</td>
+                `;
+            resultsBody.appendChild(row);
+        });
+
+        document.getElementById('results').style.display = 'block';
+    }
+
+    // Initialize with default pack sizes
+    function initDefaultSizes() {
+        const defaultSizes = [250, 500, 1000, 2000, 5000];
+        const container = document.getElementById('pack-size-inputs');
+        container.innerHTML = '';
+
+        defaultSizes.forEach(size => {
+            const div = document.createElement('div');
+            div.className = 'pack-size-input';
+            div.innerHTML = `
+                    <input type="number" min="1" class="pack-size" value="${size}">
+                    <button class="remove-pack">×</button>
+                `;
+            container.appendChild(div);
+
+            // Add remove functionality
+            div.querySelector('.remove-pack').addEventListener('click', function() {
+                div.remove();
+            });
+        });
+    }
+
+    // Initialize the page
+    initDefaultSizes();
+</script>
+</body>
+</html>

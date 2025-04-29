@@ -1,0 +1,8 @@
+infra/aws/build/*
+build/*
+pgdata/*
+.env
+__debug_bin
+ocr_backend
+.idea/*
+/**/.idea/*
