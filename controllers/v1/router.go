@@ -18,14 +18,15 @@ func Routes(route *gin.Engine) {
 	v1.Use(
 		middleware.CorsMiddleware(),
 		middleware.TimeoutMiddleware(5*time.Second),
+		middleware.RateLimiter("20-M"),
+		middleware.ErrorHandler(),
 	)
 	unauthenticatedRoutes := v1.Group("/")
-	unauthenticatedRoutes.Use(middleware.ErrorHandler())
 
 	// Setup pack routes
 	packRoutes := unauthenticatedRoutes.Group("/packs")
 	{
-		packRoutes.GET("", packController.GetPacks)              // GET /api/v1/packs?items_no=250
-		packRoutes.PUT("/sizes", packController.UpdatePackSizes) // PUT /api/v1/packs/sizes
+		packRoutes.GET("", middleware.LimitBodySize(1024), packController.GetPacks)                 // GET /api/v1/packs?items_no=250
+		packRoutes.PUT("/sizes", middleware.LimitBodySize(10*1024), packController.UpdatePackSizes) // PUT /api/v1/packs/sizes
 	}
 }

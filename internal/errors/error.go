@@ -33,6 +33,7 @@ const (
 	CodeInvalidPackSizes = 4002
 	CodeMalformedRequest = 4003
 	CodeInternalServer   = 5000
+	CodeTooManyRequests  = 4290
 )
 
 // Predefined errors
@@ -60,6 +61,11 @@ var (
 	ErrInternalServer = ErrorData{
 		Message: "Internal server error",
 		Code:    CodeInternalServer,
+	}
+
+	ErrTooManyRequests = ErrorData{
+		Message: "Too many requests",
+		Code:    CodeTooManyRequests,
 	}
 )
 
@@ -98,6 +104,20 @@ func NewInternalServerError(base ErrorData, cause error, vars V) *ErrorResponse 
 		},
 		Variables:  vars,
 		StatusCode: http.StatusInternalServerError,
+	}
+}
+
+// NewRateLimitError creates a 429 error
+func NewRateLimitError(retryAfter string) *ErrorResponse {
+	return &ErrorResponse{
+		ErrorData: ErrorData{
+			Message: ErrTooManyRequests.Message,
+			Code:    ErrTooManyRequests.Code,
+		},
+		Variables: V{
+			"retry_after": retryAfter,
+		},
+		StatusCode: http.StatusTooManyRequests,
 	}
 }
 

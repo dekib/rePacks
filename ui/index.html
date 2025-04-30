@@ -118,12 +118,41 @@
 
     // Submit pack sizes to API
     document.getElementById('submit-sizes').addEventListener('click', async function() {
-        const packSizes = Array.from(document.querySelectorAll('.pack-size'))
-            .map(input => parseInt(input.value))
-            .filter(size => !isNaN(size) && size > 0);
+        const inputs = Array.from(document.querySelectorAll('.pack-size'));
+        const packSizes = [];
+        let hasErrors = false;
+
+        // Clear any previous error styles
+        inputs.forEach(input => {
+            input.style.border = '';
+        });
+
+        // Validate each input
+        for (const input of inputs) {
+            const value = input.value.trim();
+            if (value === '') {
+                input.style.border = '1px solid red';
+                hasErrors = true;
+                continue;
+            }
+
+            const size = parseInt(value, 10);
+            if (isNaN(size) || size <= 0) {
+                input.style.border = '1px solid red';
+                hasErrors = true;
+                continue;
+            }
+
+            packSizes.push(size);
+        }
+
+        if (hasErrors) {
+            alert('Please enter valid positive numbers for all pack sizes');
+            return;
+        }
 
         if (packSizes.length === 0) {
-            alert('Please add at least one valid pack size');
+            alert('Please add at least one pack size');
             return;
         }
 
